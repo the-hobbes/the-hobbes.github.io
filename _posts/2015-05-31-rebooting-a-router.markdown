@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Rebooting a home router with Python."
-date:   2015-04-18 16:48:47
+date:   2015-05-31 18:28:47
 categories: python scripting router
 ---
  I was sitting with my laptop this weekend watching a BBC documentary about Henry the 8th (it really is amazing where you can end up on the end of a wikipedia click-binge) when the internet went out. This is an anonoying thing that happens from time to time with my router, an older Netgear WNDR3400.
