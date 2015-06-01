@@ -108,7 +108,7 @@ it up to look like this (I also added a guide in the comments at the top of the 
 # | | | | |                                   | @yearly -> 0 0 1 1 *;
 
 # reboot my router every sunday at 6pm
-0 18 * * 0 python ~/bin/routerReboot.py
+0 18 * * 0 python ~/bin/routerReboot.py >/tmp/stdout.log 2>/tmp/stderr.log
 {% endhighlight %}
 
 Once you've saved, if the cron is installed correctly you can view it by using "crontab -l". Additionally, cron will send an email to your local user account to tell you that it has completed/failed. To send this message to an email account you actually check, you can add a ".forward" file to your home directory, and in this file place an email address to where you would like to recieve cron reports.
