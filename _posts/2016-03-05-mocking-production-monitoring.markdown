@@ -9,16 +9,16 @@ I’ve recently decided to undertake a little personal project to create a mock 
 Goals
 ===
 1. Create a simple but functioning web application that responds to regular HTTP and RPC requests
-+ Implement monitoring (including logging) and alerting for this application using industry standard technology and homebrewed solutions where applicable
-+ Thoroughly understand what goes into building a solid production environment and maintaining it
-+ Learn more about logging, monitoring, alerting, Java, and GoLang
+2. Implement monitoring (including logging) and alerting for this application using industry standard technology and homebrewed solutions where applicable
+3. Thoroughly understand what goes into building a solid production environment and maintaining it
+4. Learn more about logging, monitoring, alerting, Java, and GoLang
 
 Objectives
 ===
 1. Create a simple web server in Go that responds to common HTTP GET and POST requests
-+ Create a simple api server (also in Go) that responds to RPCs
-+ Create simple ‘hammer’ applications in Java that can simulate high volumes of traffic to the Go web and api servers
-+ Host these applications on small GCE or AWS servers, depending on what is most cost effective
+2. Create a simple api server (also in Go) that responds to RPCs
+3. Create simple ‘hammer’ applications in Java that can simulate high volumes of traffic to the Go web and api servers
+4. Host these applications on small GCE or AWS servers, depending on what is most cost effective
 
 Specifications
 ===
