@@ -2,7 +2,7 @@
 title: 'Phelan on Github'
 email: phelan.vendeville@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  Website at github. This is a test.
+  Phelan's website on github.
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "http://the-hobbes.github.io" # the base hostname & protocol for your site
 twitter_username: PhelanVendevill
