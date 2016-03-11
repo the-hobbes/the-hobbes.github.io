@@ -12,7 +12,33 @@ As stated in my previous post, the server should respond to both GET and POST re
 * POST/GET requests for '/redirect_me' should result in a 302 redirect response
 * POST/GET requests for anything else should result in a 400 not found response
 
-These three types of responses should give us enough diversity in monitoring to get us started.
+Tracking these three types of responses should give us enough diversity in monitoring to get us started. With that in mind, lets have a look at about the simplest web server you can make in Go:
+
+```
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+}
+
+func main() {
+    http.HandleFunc("/", handler)
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+The above code is taken from the [Writing Web Applications](https://golang.org/doc/articles/wiki/#tmp_3), tutorial, and functions basically as follows.
+
+In the `main` function, we set up a handler for all requests to the root of the site ('/'). The call to [`HandleFunc`](https://golang.org/pkg/net/http/#HandleFunc) registers the handler function you provide for a pattern (in this `handler` is registered for case '/') in the DefaultServeMux, discussed below. You can also use the [Handle](https://golang.org/pkg/net/http/#Handle) function to register handlers.
+
+The next line is a call to ListenAndServe, which is what actually starts the HTTP server. It accepts two arguments, a port and a handler of type [Handler](https://golang.org/pkg/net/http/#Handler). By providing `nil` as the handler, ListenAndServe defaults to DefaultServeMux, which is an instance of the [ServeMux](https://golang.org/pkg/net/http/#ServeMux) type, an HTTP request multiplexer. From the docs, 'ListenAndServe listens on the TCP network address addr and then calls Serve with handler to handle requests on incoming connections.'
+
+As for the `handler` function itself, it takes a ResponseWriter and Request and uses.........
 
 - talk about the basic server in go
 - talk about wrapping the request handlers for instrumentation
