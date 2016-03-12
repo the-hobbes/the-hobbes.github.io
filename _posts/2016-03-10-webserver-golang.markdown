@@ -42,12 +42,71 @@ As for the `handler` function itself, it takes a ResponseWriter and Request obje
 
 Now we've got a basic HTTP server. If we save it as http.go and have the 'go' command line tool installed, we can start it up from the command line using `go run http.go`. You can either visit `localhost:8080/` in your browser, or run a command like `curl -X GET localhost:8080/` to send requests to the server.
 
-- talk about wrapping the request handlers for instrumentation
-- talk about what we want to track, and the structure that might take
+The next step is to add some instrumentation to the server. To do this, we'll want to wrap the handler in such a way that for every request it processes, we collect some interesting stats. Possibilities include:
 
+* the total number of requests
+* the total number of errors returned by the server
+* the latency for each request
+
+Given the nature of and HTTP response, it would be useful to also add some metadata to each of these stats to track a breakdown of response by class. For example, the total number of 200 OK requests, or the total number of 500 errors. I'll get into some of the implementation details of this in the next post, such as the right format for these metrics (eg a distribution for latency stats). We also might want to add some logging, so we can see each request as it is processed by the server.
+
+To demonstrate how one might perform the handler wrapping, lets take a look at some more code.
+
+```
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+type WrapHTTPHandler struct {
+	handler http.Handler
+	stats map[string]RequestStats
+}
+
+type LoggedResponse struct {
+	http.ResponseWriter
+	status int
+}
+
+func (wrappedHandler *WrapHTTPHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	loggedWriter := &LoggedResponse{ResponseWriter: writer, status: 200}
+	start := time.Now()
+	wrappedHandler.handler.ServeHTTP(loggedWriter, request)
+	elapsed := time.Since(start)
+	log.SetPrefix("[Info]")
+	log.Printf("[%s] %s - %d, time elapsed was: %dns.\n",
+		request.RemoteAddr, request.URL, loggedWriter.status, elapsed)
+}
+
+func (loggedResponse *LoggedResponse) WriteHeader(status int) {
+	loggedResponse.status = status
+	loggedResponse.ResponseWriter.WriteHeader(status)
+}
+
+func rootHandler(writer http.ResponseWriter, request *http.Request) {
+	// The "/" pattern matches everything, so we need to check that we're at the root here.
+	if request.URL.Path != "/" {
+		http.NotFound(writer, request)
+		return
+	}
+	fmt.Fprintf(writer, "You've hit the home page.")
+}
+
+func main() {
+	stats := make(map[string]RequestStats)
+	http.HandleFunc("/", rootHandler)
+	http.Handle("/redirect_me", http.RedirectHandler("/", http.StatusFound))
+	log.Fatalln(http.ListenAndServe(":8080", &WrapHTTPHandler{http.DefaultServeMux, stats}))
+}
+```
 
 External instrumentation solutions
 ===
+During the course of researching this blog post, I came across some tools that are used to perform metric gathering in the production environments in industry. Here's a list of what I turned up. If I've missed your favorite, or if you experience with any of these tools, please let me know.
 * https://github.com/n1trux/awesome-sysadmin#monitoring
 * https://www.reddit.com/r/golang/comments/439jb4/is_there_a_library_that_can_measure_latency_of/
 * https://prometheus.io/
