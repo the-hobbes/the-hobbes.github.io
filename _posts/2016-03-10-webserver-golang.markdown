@@ -38,9 +38,10 @@ In the `main` function, we set up a handler for all requests to the root of the 
 
 The next line is a call to ListenAndServe, which is what actually starts the HTTP server. It accepts two arguments, a port and a handler of type [Handler](https://golang.org/pkg/net/http/#Handler). By providing `nil` as the handler, ListenAndServe defaults to DefaultServeMux, which is an instance of the [ServeMux](https://golang.org/pkg/net/http/#ServeMux) type, an HTTP request multiplexer. From the docs, 'ListenAndServe listens on the TCP network address addr and then calls Serve with handler to handle requests on incoming connections.'
 
-As for the `handler` function itself, it takes a ResponseWriter and Request and uses.........
+As for the `handler` function itself, it takes a ResponseWriter and Request object and uses [Fprintf](https://golang.org/pkg/fmt/#Fprintf) to write a message to the ResponseWriter that includes the request path (slicing off the preceeding '/' with the `[1:]` syntax).
 
-- talk about the basic server in go
+Now we've got a basic HTTP server. If we save it as http.go and have the 'go' command line tool installed, we can start it up from the command line using `go run http.go`. You can either visit `localhost:8080/` in your browser, or run a command like `curl -X GET localhost:8080/` to send requests to the server.
+
 - talk about wrapping the request handlers for instrumentation
 - talk about what we want to track, and the structure that might take
 
