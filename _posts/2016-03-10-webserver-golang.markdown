@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "An instrumented webserver in Go"
-date:   2016-03-10 15:01:00
+date:   2016-03-13 14:35:00
 categories: update production monitoring golang webserver
 ---
 I've decided that the first step in my process of mocking production is to create something to monitor. I'll begin with the web server, for which I've picked Go as the implementation language.
@@ -133,7 +133,7 @@ During the course of researching this blog post, I came across some tools that a
 * [Collectl](http://collectl.sourceforge.net/) - Another system performance metrics collecting tool.
 * [Statsd](https://github.com/etsy/statsd) - An application statistic listener developed by etsy.
 * [Prometheus](https://prometheus.io/) - An open-source service monitoring system and time series database.
-  * It also has a Go [client](https://github.com/prometheus/client_golang) and [transformation server](https://github.com/prometheus/prometheus)
+  * Prometheus also has a Go [client](https://github.com/prometheus/client_golang) and [transformation server](https://github.com/prometheus/prometheus)
 * [go-metrics](https://github.com/rcrowley/go-metrics) - A go port of a [JMV metric collection library](https://github.com/dropwizard/metrics)
 
 Next post I'll delve into the metrics themselves more deeply, and how to structure and store them. I'd also like to explore a few of the above tools in future posts.
