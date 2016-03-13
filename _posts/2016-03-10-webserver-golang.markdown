@@ -64,7 +64,6 @@ import (
 
 type WrapHTTPHandler struct {
 	handler http.Handler
-	stats map[string]RequestStats
 }
 
 type LoggedResponse struct {
@@ -97,19 +96,44 @@ func rootHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	stats := make(map[string]RequestStats)
 	http.HandleFunc("/", rootHandler)
 	http.Handle("/redirect_me", http.RedirectHandler("/", http.StatusFound))
-	log.Fatalln(http.ListenAndServe(":8080", &WrapHTTPHandler{http.DefaultServeMux, stats}))
+	http.ListenAndServe(":8080", &WrapHTTPHandler{http.DefaultServeMux})
 }
+```
+
+We'll begin with what is happening in the main function. First, we use HandleFunc to register a handler function for the site root, called rootHandler. We then use Handle to register a built in RedirectHandler for the path "/redirect_me", which we'll use to generate 302 responses via the StatusFound directive. With these two handler's registered, we'll actually start the server as we did in the previous example, using ListenAndServe. The key difference this time is the second argument to ListenAndServe, which happens to be `&WrapHTTPHandler{http.DefaultServeMux}` instead of nil.
+
+The `WrapHTTPHandler` type serves as a wrapper around the Handler for ListenAndServe, allowing us to execute our own code each time a request is handled, along with the regular functionality that the DefaultServeMux provides. Since a Handler is defined as a type of object that implements the [ServeHTTP](https://golang.org/pkg/net/http/#HandlerFunc.ServeHTTP) method, that is what we need to override to add our metric code.
+
+Indeed, when we look at our implementation of ServeHTTP, we can see we've added a few things, before and after the call to the original handler.ServeHTTP function which actually performs the serving transaction. First, we create a new instance of `LoggedResponse`, a type we've created to add some additional information in the form of the HTTP response code (`status`)to the builtin [ResponseWriter](https://golang.org/pkg/net/http/#ResponseWriter) type used to send HTTP replies. Next, we start a timer and kick off the call to `wrappedHandler.handler.ServeHTTP`, passing our loggedWriter instance and request to be served by the default ServeHTTP method we get from the handler. We then take the elapsed time (to be used later in our latency measurements), and set up some logging before writing all of that information out.
+
+This means that whenever a user makes a request for the site root and `rootHandler` is called, the wrapped `ServeHTTP` will be used to serve the response. The same goes for the redirect handler, `http.RedirectHandler`. In this way, we can inject some simple metrics into our handling code.
+
+Finally, here's a simple script that you can use to generate some requests to your server and start seeing some responses.
+
+```
+#!/bin/bash
+for i in `seq 1 50`
+do
+  curl -X GET localhost:8080/
+  curl -X POST localhost:8080/
+  curl -X GET localhost:8080/fail
+  curl -X GET localhost:8080/redirect_me
+done
 ```
 
 External instrumentation solutions
 ===
 During the course of researching this blog post, I came across some tools that are used to perform metric gathering in the production environments in industry. Here's a list of what I turned up. If I've missed your favorite, or if you experience with any of these tools, please let me know.
-* https://github.com/n1trux/awesome-sysadmin#monitoring
-* https://www.reddit.com/r/golang/comments/439jb4/is_there_a_library_that_can_measure_latency_of/
-* https://prometheus.io/
-* https://www.reddit.com/r/golang/comments/2ag28l/golang_apps_profiling_and_monitoring_any_tips/
-* datadog
-* signalfx
+
+* [Profiling Go](http://blog.golang.org/profiling-go-programs) - Official GoLang blog post about profiling go programs
+* [python-diamond](https://github.com/python-diamond/Diamond) - A python based statistic collection daemon.
+* [Collectd](https://collectd.org/) - A general system statistic collection daemon that looks [like it](https://github.com/collectd/go-collectd) could be used to monitor Go binaries
+* [Collectl](http://collectl.sourceforge.net/) - Another system performance metrics collecting tool.
+* [Statsd](https://github.com/etsy/statsd) - An application statistic listener developed by etsy.
+* [Prometheus](https://prometheus.io/) - An open-source service monitoring system and time series database.
+  * It also has a Go [client](https://github.com/prometheus/client_golang) and [transformation server](https://github.com/prometheus/prometheus)
+* [go-metrics](https://github.com/rcrowley/go-metrics) - A go port of a [JMV metric collection library](https://github.com/dropwizard/metrics)
+
+Next post I'll delve into the metrics themselves more deeply, and how to structure and store them. I'd also like to explore a few of the above tools in future posts.
