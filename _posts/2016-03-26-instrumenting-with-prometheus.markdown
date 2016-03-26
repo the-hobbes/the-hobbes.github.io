@@ -90,7 +90,29 @@ representation of a value like the cpu/memory usage on a machine, or the number
 of running instances of a given job. These values will still be useful without a
 corresponding time interval, which isn't true of Counters.
 
-'Distribution' is another commonly used metric. A distribution 
+'Distribution' is another commonly used metric type. Distributions (or
+histograms) group sampled values into different 'bins', and the count of values
+in these bins is used to represent the frequency of values that fall into the
+range represented by the bin. Distributions are especially useful when used to
+represent things like size or duration (request latency or request size). 
+
+Distributions can also be used to calculate quantiles and percentiles of their
+tracked data, which is comes in handly when you want to see things that might be
+hidden from you by using mean values to represent the health of your system. 
+Take latency for example. If your mean or even 50th percentile (median) request
+latency is 80 milliseconds, you might interpret that to mean the system is
+running well and user requests are being served in a timely manner. However, 
+graphing 90th percentile latency could easily paint a different picture- if your
+99th percentile latency is 10 seconds, 1% of your users are experiencing request
+latency of 10+ seconds, which should probably be investigated. 
+
+Given this information, we'll want to instrument our http server using counters
+to represent the requests and errors, and a distribution type metric to track
+the request latencies. Happily, Prometheus provides all of these metric types in
+their [Golang client library]. 
+
+Using the client library
+------------------------
 
 
 Putting it together
@@ -103,4 +125,5 @@ Putting it together
 [visualization]: https://prometheus.io/docs/visualization/browser/
 [can also display]: https://prometheus.io/docs/visualization/grafana/
 [enumerated in the docs]: https://prometheus.io/docs/operating/configuration/
+[Golang client library]: https://github.com/prometheus/client_golang
 
