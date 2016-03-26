@@ -15,11 +15,11 @@ database. It comes with some basic visualization and has a built-in query
 language to support detailed examination of exported metrics.
 
 You can get up and running with Prometheus quickly by following the hello world
-example on their website. The basic system consists of the Prometheus binary 
+example on their website. The basic system consists of the Prometheus binary
 itself, a configuration you write in yaml and provide to it, and the
 instrumentation you add via one of the many Prometheus [client libraries]. If
 there isn't client code for the language your project uses, you can also send
-data to the Prometheus server via one of two [exposition formats]. 
+data to the Prometheus server via one of two [exposition formats].
 
 In addition to the basics, the Prometheus system also has support for [alerting]
 and [visualization]. Graphana [can also display] Prometheus data, which is
@@ -54,7 +54,7 @@ scrape\_configs:
 This config file sets up two targets for prometheus to scrape exported metrics
 from, one that runs on port 9090 that we label 'prometheus' (the prometheus
 binary itself), and one that runs on 8080 that we label 'http\_server', which is
-the http server we wrote in the last post. There are also some other 
+the http server we wrote in the last post. There are also some other
 specifications in the config, like a scrape interval (globally 5 seconds, but
 overriden for our http-server target to 5 seconds), and a rule file, in which
 you can specify aggregations or precomputations that you'd like to collect in
@@ -83,7 +83,7 @@ I'll first need to choose the right kind of metric to represent them.
 The 'Counter' metric is a simple, cumulative count of some value. Counters are
 continuously increasing metrics that are useful when paired with a time
 interval (eg '... in the last 10 minutes'). Common examples of counters include
-requests served, errors served, or job failures. 
+requests served, errors served, or job failures.
 
 'Gauge' is another type of useful metric. It gives the instantateous
 representation of a value like the cpu/memory usage on a machine, or the number
@@ -94,26 +94,53 @@ corresponding time interval, which isn't true of Counters.
 histograms) group sampled values into different 'bins', and the count of values
 in these bins is used to represent the frequency of values that fall into the
 range represented by the bin. Distributions are especially useful when used to
-represent things like size or duration (request latency or request size). 
+represent things like size or duration (request latency or request size).
 
 Distributions can also be used to calculate quantiles and percentiles of their
 tracked data, which is comes in handly when you want to see things that might be
-hidden from you by using mean values to represent the health of your system. 
+hidden from you by using mean values to represent the health of your system.
 Take latency for example. If your mean or even 50th percentile (median) request
 latency is 80 milliseconds, you might interpret that to mean the system is
-running well and user requests are being served in a timely manner. However, 
+running well and user requests are being served in a timely manner. However,
 graphing 90th percentile latency could easily paint a different picture- if your
 99th percentile latency is 10 seconds, 1% of your users are experiencing request
-latency of 10+ seconds, which should probably be investigated. 
+latency of 10+ seconds, which should probably be investigated.
 
 Given this information, we'll want to instrument our http server using counters
 to represent the requests and errors, and a distribution type metric to track
 the request latencies. Happily, Prometheus provides all of these metric types in
-their [Golang client library]. 
+their [Golang client library].
 
 Using the client library
 ------------------------
+I should note that Prometheus actually comes with its [own http hander] that
+exports some http metrics by default. I'm not using it in my example, since I
+wanted to get a feel for creating the metrics myself.
 
+To create a counter tracking the HTTP responses, you can use the NewCounterVec
+function provided by the Prometheus library.
+
+{% highlight go %}
+httpResponsesTotal = prometheus.NewCounterVec(
+  prometheus.CounterOpts{
+    Namespace: "mocking_production",
+        Subsystem: "http_server",
+        Name:      "http_responses_total",
+        Help:      "The count of http responses issued, classified by code and method.",
+    },
+    []string{"code", "method"},
+)
+{% endhighlight %}
+
+In this snippet, I've defined a counter called `httpResponsesTotal`, and added
+some contextual information to it by using `prometheus.CounterOpts`. The
+namespace, subsystem and name will all become part of the metric name and help provide clarifying details about what the counter does.
+
+I've also annotated the counter with two strings, "code" and "method". These
+will be the HTTP response code provided by the http server and the HTTP request method, respectively. These will be added to the counter metric as labels, which means we don't need a separate counter for errors. Instead, we can use the
+Prometheus query language to show only those requests with a code of 500 or
+greater, like `http_requests_total{code=~"^5..$"}`. I created the distribution
+metric in a similar fashion, using `prometheus.NewHistogramVec`.
 
 Putting it together
 -------------------
@@ -126,4 +153,4 @@ Putting it together
 [can also display]: https://prometheus.io/docs/visualization/grafana/
 [enumerated in the docs]: https://prometheus.io/docs/operating/configuration/
 [Golang client library]: https://github.com/prometheus/client_golang
-
+[own http hander]: https://github.com/prometheus/client_golang/blob/90c15b5efa0dc32a7d259234e02ac9a99e6d3b82/prometheus/http.go#L60
