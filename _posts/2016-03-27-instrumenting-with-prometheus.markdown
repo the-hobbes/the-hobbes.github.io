@@ -1,12 +1,13 @@
 ---
 layout: post
 title:  "Adding instrumentating with Prometheus"
-date:   2016-03-26 22:06:47
+date:   2016-03-27 15:04
 categories: update prometheus metrics instrumentation monitoring
 ---
 This post will take a look at using the Prometheus monitoring system to set up
-instrumentation in the webserver we built last post. I'll start by giving an
-overview of Prometheus, and then dive into some code examples.
+instrumentation in the web server we built last post. I'll start by giving an
+overview of Prometheus, and then dive into some code examples, metric types,
+and graph/expression creation to slice up the metrics we generate.
 
 Prometheus
 ----------
@@ -48,12 +49,12 @@ scrape\_configs:
   - job\_name: 'http-server'
   scrape\_interval: 5s
   target\_groups:
-    - targets: ['localhost:8080']
+    - targets: ['localhost:7070']
 {% endhighlight %}
 
 This config file sets up two targets for prometheus to scrape exported metrics
 from, one that runs on port 9090 that we label 'prometheus' (the prometheus
-binary itself), and one that runs on 8080 that we label 'http\_server', which is
+binary itself), and one that runs on 7070 that we label 'http\_server', which is
 the http server we wrote in the last post. There are also some other
 specifications in the config, like a scrape interval (globally 5 seconds, but
 overriden for our http-server target to 5 seconds), and a rule file, in which
@@ -178,7 +179,67 @@ func init() {
 Putting it together
 -------------------
 With the serving code properly instrumented, we can start making some requests
-and recording statistics. 
+and recording statistics. First, start prometheus:
+
+`$ ./prometheus -config.file=/home/phelan/Repositories/mockingProduction/prometheus/prometheus.yml -storage.local.path=/tmp/data`
+
+Next, build and start the http server:
+
+{% highlight bash %}
+$ go get -d
+$ go build
+$ ./http_server -port=7070
+{% endhighlight %}
+
+Then, make some requests to generate data. You can use something similar to the
+curl + bash script we wrote in the last post, or just hit the exposed endpoint
+yourself (for example, by visiting `localhost:7070/redirect_me` in your
+browser).
+
+Once you've exercised the server a bit, you can check out the data that
+Prometheus has recorded. Visit `localhost:7070/metrics` to see the raw metrics,
+and look for both `mocking_production_http_server_http_response_latencies` and
+`mocking_production_http_server_http_responses_total`. These are the
+distribution and counter metric variables that we declared in our Go code. Note
+the code and method labels, as well as the different buckets for the
+Distribution.
+
+After you viewed the raw metrics, head over to the Prometheus graphing endpoint
+to generate a few visualizations, which can be found at `localhost:9090/graph`
+if you've used the yaml configuration detailed above. You can then use the
+expression browser to examine the recorded metrics. The Prometheus site has both
+example queries and a useful [query function reference] guide. Here are some of
+the graphs I generated:
+
+Graph the per-second rate for all the
+`mocking_production_http_server_http_responses_total` timeseries, as measured
+over the last 5 minutes and summed by the response code.
+* Expression: `sum(rate(mocking_production_http_server_http_responses_total[5m])) by (code)`
+* Graph:
+![rate](images/2016-03-27/rate.png)
+
+Display the ratio of code 400 responses to all responses.
+* Expression: `sum(rate(mocking_production_http_server_http_responses_total{code=~"^4..$"}[5m])) / sum(rate(mocking_production_http_server_http_responses_total[5m]))`
+* Graph:
+![ratio](images/2016-03-27/ratio.png)
+
+Show the 95th percentile latency of HTTP requests, grouped by code. Note that
+the `le` label (indicating the inclusive upper bound of the bucket) is required
+by the `histogram_quantile()` function, so it has to be included in the by
+clause along with the code.
+* Expression: `histogram_quantile(0.95, sum(rate(mocking_production_http_server_http_response_latencies_bucket[5m])) by (code, le))`
+* Graph:
+![percentile](images/2016-03-27/percentile.png)
+
+Conclusions
+-----------
+That's it for this installment of mocking production. I'm going to keep using
+Prometheus as the metric instrumentation portion of this project, and
+investigate using Graphana to create dashboards, as well as setting up the
+Prometheus Alert Manager to fire off a few test alerts. Other upcoming projects
+include black box monitoring (probers), an API server, an examination of
+sysdig and logging options for the servers, and a look at container solutions
+like Docker.
 
 [prometheus]: https://prometheus.io/
 [client libraries]: https://prometheus.io/docs/instrumenting/clientlibs/
@@ -189,3 +250,4 @@ and recording statistics.
 [enumerated in the docs]: https://prometheus.io/docs/operating/configuration/
 [Golang client library]: https://github.com/prometheus/client_golang
 [own http hander]: https://github.com/prometheus/client_golang/blob/90c15b5efa0dc32a7d259234e02ac9a99e6d3b82/prometheus/http.go#L60
+[query function reference]: https://prometheus.io/docs/querying/functions/
