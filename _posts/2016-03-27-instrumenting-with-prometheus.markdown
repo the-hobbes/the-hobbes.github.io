@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Adding instrumentating with Prometheus"
+title:  "Adding instrumentation with Prometheus"
 date:   2016-03-27 15:04
 categories: update prometheus metrics instrumentation monitoring
 ---
