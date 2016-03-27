@@ -142,8 +142,43 @@ Prometheus query language to show only those requests with a code of 500 or
 greater, like `http_requests_total{code=~"^5..$"}`. I created the distribution
 metric in a similar fashion, using `prometheus.NewHistogramVec`.
 
+After adding the metrics, you need to increment them in the right place. For
+the http server, this means the custom request handler we used to wrap the
+default Go handler. The response counter should be incremented each time the
+wrapped request handler is called, and the latency distribution should record
+the time it takes to serve each of these requests. With that in mind, we get
+something like the following wrapped handler:
+
+{% highlight go %}
+func (wrappedHandler \*WrapHTTPHandler) ServeHTTP(writer http.ResponseWriter, request \*http.Request) {
+	loggedWriter := &LoggedResponse{ResponseWriter: writer, status: 200}
+	start := time.Now()
+	wrappedHandler.handler.ServeHTTP(loggedWriter, request)
+	elapsed := time.Since(start)
+	msElapsed := elapsed / time.Millisecond
+	status := strconv.Itoa(loggedWriter.status)
+
+  // increment the count of responses, adding the status and method values
+	httpResponsesTotal.WithLabelValues(status, request.Method).Inc()
+  // record the time elapsed to serve the request, along with status + method
+	httpResponseLatencies.WithLabelValues(status, request.Method).Observe(float64(msElapsed))
+}
+{% endhighlight %}
+
+Finally, we need to register the metrics before we can use them. The `init()`
+function comes in handy for this:
+
+{% highlight go %}
+func init() {
+  prometheus.MustRegister(httpResponsesTotal)
+  prometheus.MustRegister(httpResponseLatencies)
+}
+{% endhighlight %}
+
 Putting it together
 -------------------
+With the serving code properly instrumented, we can start making some requests
+and recording statistics. 
 
 [prometheus]: https://prometheus.io/
 [client libraries]: https://prometheus.io/docs/instrumenting/clientlibs/
