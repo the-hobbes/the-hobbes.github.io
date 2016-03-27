@@ -216,12 +216,12 @@ Graph the per-second rate for all the
 over the last 5 minutes and summed by the response code.
 * Expression: `sum(rate(mocking_production_http_server_http_responses_total[5m])) by (code)`
 * Graph:
-![rate](../images/2016-03-27/rate.png)
+![rate](/images/2016-03-27/rate.png)
 
 Display the ratio of code 400 responses to all responses.
 * Expression: `sum(rate(mocking_production_http_server_http_responses_total{code=~"^4..$"}[5m])) / sum(rate(mocking_production_http_server_http_responses_total[5m]))`
 * Graph:
-![ratio](../images/2016-03-27/ratio.png)
+![ratio](/images/2016-03-27/ratio.png)
 
 Show the 95th percentile latency of HTTP requests, grouped by code. Note that
 the `le` label (indicating the inclusive upper bound of the bucket) is required
@@ -229,7 +229,7 @@ by the `histogram_quantile()` function, so it has to be included in the by
 clause along with the code.
 * Expression: `histogram_quantile(0.95, sum(rate(mocking_production_http_server_http_response_latencies_bucket[5m])) by (code, le))`
 * Graph:
-![percentile](../images/2016-03-27/percentile.png)
+![percentile](/images/2016-03-27/percentile.png)
 
 Conclusions
 -----------
