@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Dashboards and Alerts"
-date:   2016-04-28 08:07:11
+date:   2015-04-23 09:43:11
 categories: update prometheus monitoring dashboard alert
 ---
 
@@ -10,8 +10,7 @@ Recap
 In the previous post about instrumentation, we saw how to add Prometheus metrics
 to our toy webserver application to gain insight into its behavior and state 
 (also known as white box monitoring). We exported two types of metrics, a 
-counter to track the total count of responses issued by the server, and a 
-distribution to keep tabs on the latency of those responses. Each metric also
+counter to track the total count of responses issued by the server, and a distribution to keep tabs on the latency of those responses. Each metric also 
 had metric fields which recorded the HTTP response code issued for the request.
 
 Getting insight
@@ -101,7 +100,7 @@ identify the alert (like the severity) and annotations to add additional, non-
 identifying data to an alert (such as a playbook link). Consider the following
 example, saved as alerting.rules:
 
-{% highlight bash %}
+{% highlight markdown %}
 ALERT High500s
   IF sum(rate(mocking_production_http_server_http_responses_total{code=~"^5..$"}[5m])) / sum(rate(mocking_production_http_server_http_responses_total[5m])) > .002
   FOR 10m
@@ -207,10 +206,7 @@ issuing these commands:
 {% highlight bash %}
 $ ./alertmanager -config.file=/path/to/alertmanager/config/alertmanager_config.yml
 
-$ /opt/prometheus-0.17.0.linux-386/prometheus \
-  -config.file=/path/to/prometheus/config/prometheus.yml \
-  -storage.local.path=/tmp/data \
-  -alertmanager.url=http://localhost:9093/ 
+$ /opt/prometheus-0.17.0.linux-386/prometheus -config.file=/path/to/prometheus/config/prometheus.yml -storage.local.path=/tmp/data -alertmanager.url=http://localhost:9093/ 
 {% endhighlight %}
 
 To test that Alertmanager is receiving alerts properly from Prometheus, fire up
