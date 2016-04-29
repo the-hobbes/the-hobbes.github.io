@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Dashboards and Alerts"
-date:   2015-04-23 09:43:11
+date:   2016-04-28 08:07:11
 categories: update prometheus monitoring dashboard alert
 ---
 
