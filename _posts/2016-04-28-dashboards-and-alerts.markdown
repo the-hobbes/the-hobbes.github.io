@@ -153,7 +153,7 @@ dashboards and alerts, I decided to create a simple error handler endpoint,
 exposed at "/cause_500". I also wrote another small bash script to send 
 requests only to that endpoint.
 
-{% highlight go% }
+{% highlight go %}
 func errorHandler(writer http.ResponseWriter, request *http.Request) {
     // generate errors on demand
     writer.WriteHeader(http.StatusInternalServerError)
@@ -162,7 +162,7 @@ func errorHandler(writer http.ResponseWriter, request *http.Request) {
 ...
 // added the handler for the endpoint in the main method
 http.HandleFunc("/cause_500", errorHandler)
-{% endhighlight% }
+{% endhighlight %}
 
 Armed with these modifications, we can generate alerts and graphs for 500's,
 which more realistically mimics an actual production environment, and get the
